@@ -195,18 +195,6 @@ classdef JSON_SchemaLoader < JSON_Parser
             schema = this.getSubSchema(schema, '');
         end
         
-        function resolvedURI = resolveURI(this, uri, base)
-            %resolveURI resolves the reference against the base URI.
-            % See https://tools.ietf.org/html/rfc3986
-            resolvedURI = uri;
-            if ~isempty(base)
-                base = javaObject('java.net.URI', base);
-                resolvedURI = char(base.resolve(uri));
-                % Workaround for a Java bug. Resolved uri may look like file://foo/bar. We need for slashes after the protocol.
-                resolvedURI = regexprep (resolvedURI, 'file:/+', 'file:////');
-            end
-        end
-        
         function normalizeSchema(this, schema, pointer)
             if ~JSON.isaMap(schema)
                 error('JSON:PARSE_SCHEMA', 'A JSON Schema MUST be an object, found %s', class(schema));
@@ -272,10 +260,16 @@ classdef JSON_SchemaLoader < JSON_Parser
             %MERGESCHEMAS Summary of this function goes here
             %   Detailed explanation goes here
             
+            % TODO: restrict 'type' to 'object' for merging? Fail for other
+            % types?
+            
+            % TODO: should not we merge 'type' as well?
+            
             % Merge properties and required fields of all schemas.
             mergedProperties = containers.Map();
             schema('properties') = mergedProperties;
             schema('required') = {};
+            schema('additionalProperties') = true;
             allOf = schema('allOf');
             
             for k=1:length(allOf)
@@ -294,6 +288,13 @@ classdef JSON_SchemaLoader < JSON_Parser
                 
                 if subSchema.isKey('required')
                     schema('required') = [schema('required') subSchema('required')];
+                end
+
+                % Merge 'additionalProperties' with and-logic, i.e. only allowed if
+                % all subschemas allow it
+                if subSchema.isKey('additionalProperties')
+                    schema('additionalProperties') = ...
+                      schema('additionalProperties') && subSchema('additionalProperties');
                 end
             end
             
