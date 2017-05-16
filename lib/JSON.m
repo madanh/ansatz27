@@ -47,6 +47,8 @@ classdef JSON < handle
             if isempty(type); return; end;
             
             if isempty(value)
+                % FIXME: This fails later in validate() for pType = 'object' and empty
+                % value.
                 pType = type{1};
             else
                 n = numel(value);
