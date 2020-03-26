@@ -228,9 +228,20 @@ classdef JSON_Parser < JSON
             
             this.parseChar(']');
             
+
             if iscell(val) && ~isfield(context, 'isArray')
-                % End-of-line of a nested cell array. Try to convert to matrix.
-                val = JSON_Parser.cellToMat(val);
+                if ~isempty(val)
+                    % End-of-line of a nested cell array. Try to convert to matrix.
+                    val = JSON_Parser.cellToMat(val);
+                elseif ~isempty(itemSchema)
+                    itemType = JSON.getPath(itemSchema, '/type');
+                    % if the array is empty, but items type is not, coerce it
+                    % according to the items type. Only try to convert it
+                    % to matrix if items type is explicitly number or boolean
+                    if ~isempty(itemType) && any(strcmp('number',itemType)) || any(strcmp('boolean',itemType))
+                        val = JSON_Parser.cellToMat(val);
+                    end
+                end
             end
         end
         
