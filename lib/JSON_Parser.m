@@ -238,7 +238,8 @@ classdef JSON_Parser < JSON
                     % if the array is empty, but items type is not, coerce it
                     % according to the items type. Only try to convert it
                     % to matrix if items type is explicitly number or boolean
-                    if ~isempty(itemType) && any(strcmp('number',itemType)) || any(strcmp('boolean',itemType))
+                    if ~isempty(itemType) && ...
+                            (any(strcmp('number',itemType)) || any(strcmp('boolean',itemType)) || any(strcmp('integer',itemType)))
                         val = JSON_Parser.cellToMat(val);
                     end
                 end
